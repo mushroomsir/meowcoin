@@ -6,6 +6,8 @@ import (
 	"fmt"
 	"math"
 	"math/big"
+
+	"github.com/mushroomsir/meowcoin/tools"
 )
 
 var (
@@ -33,9 +35,9 @@ func (pow *ProofOfWork) prepareData(nonce int) []byte {
 		[][]byte{
 			pow.block.PrevBlockHash,
 			pow.block.Data,
-			IntToHex(pow.block.Timestamp),
-			IntToHex(int64(targetBits)),
-			IntToHex(int64(nonce)),
+			tools.IntToHex(pow.block.Timestamp),
+			tools.IntToHex(int64(targetBits)),
+			tools.IntToHex(int64(nonce)),
 		},
 		[]byte{},
 	)
