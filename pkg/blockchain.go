@@ -1,25 +1,25 @@
 package pkg
 
 import (
+	"encoding/hex"
+
 	"github.com/boltdb/bolt"
 	"github.com/mushroomsir/meowcoin/tools"
 )
 
 const dbFile = "data/blockchain.db"
 const blocksBucket = "blocks"
+const genesisCoinbaseData = "2018年1月26日起始"
 
-func NewGenesisBlock() *Block {
-	return NewBlock("Genesis Block", []byte{})
-}
-
-func NewBlockchain() *Blockchain {
+func NewBlockchain(address string) *Blockchain {
 	var tip []byte
 	db, err := bolt.Open(dbFile, 0600, nil)
 	tools.Check(err)
 	err = db.Update(func(tx *bolt.Tx) error {
 		b := tx.Bucket([]byte(blocksBucket))
 		if b == nil {
-			genesis := NewGenesisBlock()
+			cbtx := NewCoinbaseTX(address, genesisCoinbaseData)
+			genesis := NewGenesisBlock(cbtx)
 			b, err := tx.CreateBucket([]byte(blocksBucket))
 			tools.Check(err)
 			err = b.Put(genesis.Hash, genesis.Serialize())
@@ -42,32 +42,20 @@ type Blockchain struct {
 	db  *bolt.DB
 }
 
+func (bc *Blockchain) FindUnspentTransactions(address string) {
+	var unspentTXs []Transaction
+	spentTXOs := make(map[string][]int)
+	bci := bc.Iterator()
+	for {
+		block := bci.Next()
+		for _, tx := range block.Transactions {
+			txID := hex.EncodeToString(tx.ID)
+
+		}
+	}
+}
 func (bc *Blockchain) CloseDB() {
 	tools.Print(bc.db.Close())
-}
-func (bc *Blockchain) AddBlock(data string) {
-	var lastHash []byte
-
-	err := bc.db.View(func(tx *bolt.Tx) error {
-		b := tx.Bucket([]byte(blocksBucket))
-		lastHash = b.Get([]byte("l"))
-
-		return nil
-	})
-	tools.Check(err)
-
-	newBlock := NewBlock(data, lastHash)
-
-	err = bc.db.Update(func(tx *bolt.Tx) error {
-		b := tx.Bucket([]byte(blocksBucket))
-		err := b.Put(newBlock.Hash, newBlock.Serialize())
-		tools.Print(err)
-		err = b.Put([]byte("l"), newBlock.Hash)
-		bc.tip = newBlock.Hash
-
-		return nil
-	})
-	tools.Print(err)
 }
 
 func (bc *Blockchain) Iterator() *BlockchainIterator {
